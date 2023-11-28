@@ -19,7 +19,7 @@ build:
 test:
   stage: test
   script:
-    - mvn test jacoco:report -Djacoco.destFile=custom/path/for/report/jacoco.exec
+    - mvn test 
   artifacts:
     paths:
       - custom/path/for/report/  # Path to your custom Jacoco report directory
