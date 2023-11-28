@@ -1,4 +1,4 @@
-image: maven:3.8.1
+image: maven:3.8.3
 
 stages:
   - build
@@ -19,7 +19,7 @@ build:
 test:
   stage: test
   script:
-    - mvn test -e -X
+    - mvn test -e 
   artifacts:
     paths:
       - custom/path/for/report/  # Path to your custom Jacoco report directory
