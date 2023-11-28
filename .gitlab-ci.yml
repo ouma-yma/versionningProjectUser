@@ -1,4 +1,4 @@
-image: maven:3.8.3
+image: maven:3.8.1
 
 stages:
   - build
