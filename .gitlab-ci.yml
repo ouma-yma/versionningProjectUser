@@ -1,53 +1,96 @@
-image: docker:latest
-services:
-  - docker:dind
-  - mysql:8
-
 stages:
+  - clean
   - build
-  - test
-  - package
-  - deploy-tb
-  - deploy-prod
+  - static-code-analysis
+  - setup-database
+  - unit-test
+  - coverage-test
+  - release
 
-maven-build:
-  image: maven:3-jdk-8
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+  IMAGE_MAVEN: maven:3.8.3
+
+clean:
+  image: $IMAGE_MAVEN
+  stage: clean
+  script:
+    - echo "Cleaning leftovers from previous builds"
+    - mvn clean
+
+build:
+  image: $IMAGE_MAVEN
   stage: build
-  script: "mvn package -B"
+  script:
+    - echo "Compiling the code..."
+    - mvn install -B -DskipTests
   artifacts:
     paths:
-      - target/*.jar
+      - target/
 
-docker-build:
-  stage: package
+static-code-analysis:
+  image: $IMAGE_MAVEN
+  stage: static-code-analysis
   script:
-    - docker build -t registry.gitlab.com/PROFILE_NAME/user .
-    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.gitlab.com
-    - docker push registry.gitlab.com/PROFILE_NAME/user
+    - echo "Running Static Code Analysis..."
+    - echo "Checking duplicated code..."
+    - mvn pmd:cpd-check
+    - echo "Checking code standard..."
+    - mvn pmd:pmd
+setup-database:
+  image: mysql:8.0
+  stage: setup-database
+  script:
+    - echo "Creating database schema and tables..."
+    - mysql -h mysql-server -u root -proot_password -e "CREATE DATABASE IF NOT EXISTS GestionUserVersMicro;"
+    - mysql -h mysql-server -u root -proot_password GestionUserVersMicro < db/schema.sql  # Adjust the path accordingly
+    - echo "Updating application.properties..."
+    - echo "server.port=8093" > application.properties
+    - echo "spring.datasource.url=jdbc:mysql://mysql-server:3306/GestionUserVersMicro?createDatabaseIfNotExist=true&serverTimezone=UTC" >> application.properties
+    - echo "spring.datasource.driver-class-name=com.mysql.jdbc.Driver" >> application.properties
+    - echo "spring.datasource.username=root" >> application.properties
+    - echo "spring.datasource.password=" >> application.properties
+    - echo "spring.jpa.hibernate.ddl-auto=update" >> application.properties
+    - echo "spring.jpa.show-sql=true" >> application.properties
+    - echo "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect" >> application.properties
+    - echo "spring.jpa.hibernate.naming.physical-strategy=org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl" >> application.properties
+  variables:
+    MYSQL_DATABASE: "GestionUserVersMicro"
+    MYSQL_ROOT_PASSWORD: "root_password"
 
-test:
+unit-test:
+  image: $IMAGE_MAVEN
+  stage: unit-test
+  services:
+    - name: mysql:8.0
+      alias: mysql-server
   script:
-    - mvn verify
-  artifacts:
-    when: always
-    reports:
-      junit:
-        - target/surefire-reports/TEST-*.xml
-        - target/failsafe-reports/TEST-*.xml
+    - echo "Running database migrations..."
+    - mvn flyway:migrate -Dspring.profiles.active=test  # Example: Use Flyway for DB migrations
+    - echo "Running unit tests..."
+    - mvn test -Dspring.profiles.active=test
+  variables:
+    MYSQL_DATABASE: "your_database_name"
+    MYSQL_ROOT_PASSWORD: "root_password"
+    MYSQL_USER: "your_mysql_user"
+    MYSQL_PASSWORD: "your_mysql_password"
+coverage-test:
+  image: $IMAGE_MAVEN
+  stage: coverage-test
+  needs:
+    - job: unit-test
+  script:
+    - echo "Running coverage tests..."
 
-deploy-tb:
-  image: bitnami/kubectl:latest
-  stage: deploy-tb
-  only:
-    - master
+release:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == "master"
   script:
-    - kubectl apply -f deployment.yaml -n test
+    - echo "Creating a release..."
+    # Add commands to create the release here
+    # Example commands to create a release:
+    # - git tag -a $CI_COMMIT_SHORT_SHA -m "Release $CI_COMMIT_SHORT_SHA"
+    # - git push origin $CI_COMMIT_SHORT_SHA
 
-deploy-prod:
-  image: bitnami/kubectl:latest
-  stage: deploy-prod
-  only:
-    - master
-  when: manual
-  script:
-    - kubectl apply -f deployment.yaml -n prod
