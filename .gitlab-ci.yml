@@ -51,7 +51,6 @@ unit-test:
   stage: unit-test
   script:
     - echo "Running database migrations..."
-    - mvn flyway:migrate -Dspring.profiles.active=test  # Example: Use Flyway for DB migrations
     - echo "Running unit tests..."
     - mvn test -Dspring.profiles.active=test
  
