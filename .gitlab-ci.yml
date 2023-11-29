@@ -54,11 +54,7 @@ unit-test:
     - mvn flyway:migrate -Dspring.profiles.active=test  # Example: Use Flyway for DB migrations
     - echo "Running unit tests..."
     - mvn test -Dspring.profiles.active=test
-  variables:
-    MYSQL_DATABASE: "your_database_name"
-    MYSQL_ROOT_PASSWORD: "root_password"
-    MYSQL_USER: "your_mysql_user"
-    MYSQL_PASSWORD: "your_mysql_password"
+ 
 coverage-test:
   image: $IMAGE_MAVEN
   stage: coverage-test
