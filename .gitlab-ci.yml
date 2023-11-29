@@ -25,7 +25,7 @@ build:
     - mvn install -B -DskipTests
   artifacts:
     paths:
-      - target/  # Adjust the artifact path as per Maven's build output
+      - target/
 
 static-code-analysis:
   image: $IMAGE_MAVEN
@@ -40,9 +40,17 @@ static-code-analysis:
 unit-test:
   image: $IMAGE_MAVEN
   stage: unit-test
+  services:
+    - name: mysql:8.0
+      alias: mysql-server
   script:
     - echo "Running unit tests..."
     - mvn test -Dspring.profiles.active=test
+  variables:
+    MYSQL_DATABASE: "GestionUserVersMicro"
+    MYSQL_ROOT_PASSWORD: ""
+    MYSQL_USER: "root"
+    MYSQL_PASSWORD: 
 
 coverage-test:
   image: $IMAGE_MAVEN
@@ -51,18 +59,6 @@ coverage-test:
     - job: unit-test
   script:
     - echo "Running coverage tests..."
-
-mysql-service:
-  image: mysql:8.0
-  stage: test  # Run MySQL in the test stage
-  services:
-    - name: mysql:8.0  # Name the service
-      alias: mysql-server  # Alias for the service
-  variables:
-    MYSQL_DATABASE: "your_database_name"
-    MYSQL_ROOT_PASSWORD: "your_root_password"
-    MYSQL_USER: "your_mysql_user"
-    MYSQL_PASSWORD: "your_mysql_password"
 
 release:
   stage: release
