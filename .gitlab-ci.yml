@@ -2,9 +2,8 @@ services:
 - mysql
 
 variables:
-  # Configure mysql service (https://hub.docker.com/_/mysql/)
-  MYSQL_DATABASE: hello_world_test
-  MYSQL_ROOT_PASSWORD: mysql
+  MYSQL_DATABASE: GestionUserVersMicro
+  MYSQL_ROOT_PASSWORD: root
 
 connect:
   image: mysql
