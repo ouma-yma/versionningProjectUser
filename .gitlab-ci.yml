@@ -5,7 +5,7 @@ stages:
 variables:
   MYSQL_DATABASE: "GestionUserVersMicro"
   MYSQL_ROOT_PASSWORD: ""
-  MYSQL_USER: ""
+  MYSQL_USER: "root"
   MYSQL_PASSWORD: ""
   IMAGE_MAVEN: maven:3.8.3
 
