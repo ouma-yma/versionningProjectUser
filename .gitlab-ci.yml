@@ -5,9 +5,6 @@ stages:
   - unit-test
   - coverage-test
   - release
-services:
-  - mysql:8
-
 variables:
   MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
   IMAGE_MAVEN: maven:3.8.3
@@ -48,6 +45,8 @@ unit-test:
 
 coverage-test:
   image: $IMAGE_MAVEN
+  services:
+    - mysql:8
   stage: coverage-test
   needs:
     - job: unit-test
