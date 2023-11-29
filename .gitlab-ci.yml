@@ -1,12 +1,28 @@
-services:
-- mysql
+
+stages:
+  - connect
+  - unit-test
 
 variables:
-  MYSQL_DATABASE: GestionUserVersMicro
-  MYSQL_ROOT_PASSWORD: root
-
+  MYSQL_DATABASE: "GestionUserVersMicro"
+  MYSQL_ROOT_PASSWORD: "root"
+  MYSQL_USER: "toor"
+  MYSQL_PASSWORD: ""
+  MYSQL_HOST: "mysql"
+  IMAGE_MAVEN: maven:3.8.3
+services:
+- mysql
 connect:
   image: mysql
   script:
   - echo "SELECT 'OK';" | mysql --user=root --password="$MYSQL_ROOT_PASSWORD" --host=mysql "$MYSQL_DATABASE"
-
+unit-test:
+  image: $IMAGE_MAVEN
+  stage: unit-test
+  services:
+    - name: mysql:8.0
+      alias: mysql
+  script:
+    - echo "Running unit tests..."
+    # Assuming your tests use Maven to run and require the MySQL database
+    - mvn test -Dspring.datasource.url=jdbc:mysql://mysql:3306/$MYSQL_DATABASE -Dspring.datasource.username=$MYSQL_USER -Dspring.datasource.password=$MYSQL_PASSWORD
