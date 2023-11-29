@@ -50,7 +50,7 @@ unit-test:
     MYSQL_DATABASE: "GestionUserVersMicro"
     MYSQL_ROOT_PASSWORD: ""
     MYSQL_USER: "root"
-    MYSQL_PASSWORD: 
+    MYSQL_PASSWORD: ""
 
 coverage-test:
   image: $IMAGE_MAVEN
