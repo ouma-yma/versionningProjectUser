@@ -44,7 +44,7 @@ unit-test:
   stage: unit-test
   script:
     - echo "Running unit tests..."
-    - mvn test -Dspring.profiles.active=test
+    - mvn test 
 
 coverage-test:
   image: $IMAGE_MAVEN
