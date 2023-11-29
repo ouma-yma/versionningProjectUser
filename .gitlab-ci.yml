@@ -40,6 +40,9 @@ static-code-analysis:
     - mvn pmd:pmd
 setup-database:
   stage: setup-database
+  
+  services:
+    - mysql
   image: mysql
   script:
   - echo "SELECT 'OK';" | mysql --user=root --password="$MYSQL_ROOT_PASSWORD" --host=mysql "$MYSQL_DATABASE"
