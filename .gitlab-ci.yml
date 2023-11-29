@@ -1,35 +1,77 @@
 stages:
+  - clean
   - build
-  - test
-  - deploy
+  - static-code-analysis
+  - unit-test
+  - coverage-test
+  - release
 
 variables:
   MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+  IMAGE_MAVEN: maven:3.8.3
 
-cache:
-  paths:
-    - .m2/repository
-
-services:
-  - name: mysql:8.0  # Use the MySQL service in the Docker container
-    alias: mysql
+clean:
+  image: $IMAGE_MAVEN
+  stage: clean
+  script:
+    - echo "Cleaning leftovers from previous builds"
+    - mvn clean
 
 build:
+  image: $IMAGE_MAVEN
   stage: build
   script:
+    - echo "Compiling the code..."
     - mvn install -B -DskipTests
-
-test:
-  stage: test
-  script:
-    - mvn test -X
   artifacts:
     paths:
-      - custom/path/for/report/  # Path to your custom Jacoco report directory
+      - target/  # Adjust the artifact path as per Maven's build output
 
-deploy:
-  stage: deploy
-  image: maven:3.8.3
+static-code-analysis:
+  image: $IMAGE_MAVEN
+  stage: static-code-analysis
   script:
-    - docker run -d -p 3306:3306 --name=mysql_container -e MYSQL_ROOT_PASSWORD=root_password -e MYSQL_DATABASE=GestionUserVersMicro mysql:8.0
-    - docker run --name=myapp_container --link=mysql_container:mysql -p 8093:8093 your-app-image:tag
+    - echo "Running Static Code Analysis..."
+    - echo "Checking duplicated code..."
+    - mvn pmd:cpd-check
+    - echo "Checking code standard..."
+    - mvn pmd:pmd
+
+unit-test:
+  image: $IMAGE_MAVEN
+  stage: unit-test
+  script:
+    - echo "Running unit tests..."
+    - mvn test -Dspring.profiles.active=test
+
+coverage-test:
+  image: $IMAGE_MAVEN
+  stage: coverage-test
+  needs:
+    - job: unit-test
+  script:
+    - echo "Running coverage tests..."
+
+mysql-service:
+  image: mysql:8.0
+  stage: test  # Run MySQL in the test stage
+  services:
+    - name: mysql:8.0  # Name the service
+      alias: mysql-server  # Alias for the service
+  variables:
+    MYSQL_DATABASE: "your_database_name"
+    MYSQL_ROOT_PASSWORD: "your_root_password"
+    MYSQL_USER: "your_mysql_user"
+    MYSQL_PASSWORD: "your_mysql_password"
+
+release:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == "master"
+  script:
+    - echo "Creating a release..."
+    # Add commands to create the release here
+    # Example commands to create a release:
+    # - git tag -a $CI_COMMIT_SHORT_SHA -m "Release $CI_COMMIT_SHORT_SHA"
+    # - git push origin $CI_COMMIT_SHORT_SHA
