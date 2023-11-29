@@ -7,6 +7,8 @@ variables:
   MYSQL_ROOT_PASSWORD: ""
   MYSQL_USER: "root"
   MYSQL_PASSWORD: ""
+  MYSQL_HOST: mysql
+ 
   IMAGE_MAVEN: maven:3.8.3
 
 setup-database:
@@ -17,7 +19,7 @@ setup-database:
       alias: mysql
   script:
     - echo "Creating database schema and tables..."
-    - mysql -h mysql -u root -p$MYSQL_ROOT_PASSWORD -e "CREATE DATABASE IF NOT EXISTS $MYSQL_DATABASE;"
+    - mysql -u root -p"$MYSQL_ROOT_PASSWORD" -h "${MYSQL_HOST}" "${MYSQL_DATABASE}"
     # Add commands to populate the database if needed
 
 unit-test:
