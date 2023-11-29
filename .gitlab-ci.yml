@@ -38,6 +38,8 @@ static-code-analysis:
 
 unit-test:
   image: $IMAGE_MAVEN
+  services:
+  - mysql:8
   stage: unit-test
   script:
     - echo "Running unit tests..."
