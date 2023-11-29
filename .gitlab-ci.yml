@@ -18,6 +18,7 @@ setup-database:
       alias: mysql
   script:
     - echo "$MYSQL_HOST..."
+    - sudo apt-get install -y mysql-server mysql-client libmysqlclient-dev
     - mysql -h$DB_HOST -u$MYSQL_USER -p$MYSQL_ROOT_PASSWORD -e "CREATE DATABASE ${MYSQL_DATABASE};"
 
     # Add commands to populate the database if needed
