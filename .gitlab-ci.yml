@@ -42,8 +42,8 @@ setup-database:
   stage: setup-database
   script:
     - echo "Creating database schema and tables..."
-    - mysql -h mysql-server -u root -proot_password -e "CREATE DATABASE IF NOT EXISTS GestionUserVersMicro;"
-    - mysql -h mysql-server -u root -proot_password GestionUserVersMicro < db/schema.sql  # Adjust the path accordingly
+    - mysql -h mysql -u root -proot_password -e "CREATE DATABASE IF NOT EXISTS GestionUserVersMicro;"
+    - mysql -h mysql -u root -proot_password GestionUserVersMicro < db/schema.sql  # Adjust the path accordingly
     - echo "Updating application.properties..."
     - echo "server.port=8093" > application.properties
     - echo "spring.datasource.url=jdbc:mysql://mysql:3306/GestionUserVersMicro?createDatabaseIfNotExist=true&serverTimezone=UTC" >> application.properties
