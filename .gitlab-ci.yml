@@ -5,6 +5,8 @@ stages:
   - unit-test
   - coverage-test
   - release
+services:
+  - mysql:latest
 
 variables:
   MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
