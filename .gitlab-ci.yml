@@ -5,21 +5,21 @@ stages:
 variables:
   MYSQL_DATABASE: "GestionUserVersMicro"
   MYSQL_ROOT_PASSWORD: ""
-  MYSQL_USER: "root"
+  MYSQL_USER: "toor"
   MYSQL_PASSWORD: ""
   MYSQL_HOST: mysql
  
   IMAGE_MAVEN: maven:3.8.3
 
 setup-database:
-  image: mysql:8.0
   stage: setup-database
   services:
     - name: mysql:8.0
       alias: mysql
   script:
-    - echo "Creating database schema and tables..."
-    - mysql -u root -p"$MYSQL_ROOT_PASSWORD" -h "${MYSQL_HOST}" "${MYSQL_DATABASE}"
+    - echo "$MYSQL_HOST..."
+    - echo "SELECT 'OK';" | mysql -h$DB_HOST -u$MYSQL_USER -p$MYSQL_ROOT_PASSWORD -e "CREATE DATABASE ${MYSQL_DATABASE};"
+
     # Add commands to populate the database if needed
 
 unit-test:
