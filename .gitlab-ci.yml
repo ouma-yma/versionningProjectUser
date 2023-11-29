@@ -1,15 +1,47 @@
 stages:
-  - setup
-  - test
+  - clean
+  - build
+  - static-code-analysis
+  - setup-database
+  - unit-test
+  - coverage-test
   - release
 
 variables:
   MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
   IMAGE_MAVEN: maven:3.8.3
 
-setup:
+clean:
+  image: $IMAGE_MAVEN
+  stage: clean
+  script:
+    - echo "Cleaning leftovers from previous builds"
+    - mvn clean
+
+build:
+  image: $IMAGE_MAVEN
+  stage: build
+  script:
+    - echo "Compiling the code..."
+    - mvn install -B -DskipTests
+  artifacts:
+    paths:
+      - target/
+
+static-code-analysis:
+  image: $IMAGE_MAVEN
+  stage: static-code-analysis
+  script:
+    - echo "Running Static Code Analysis..."
+    - echo "Checking duplicated code..."
+    - mvn pmd:cpd-check
+    - echo "Checking code standard..."
+    - mvn pmd:pmd
+
+
+setup-database:
   image: mysql:8.0
-  stage: setup
+  stage: setup-database
   script:
     - echo "Creating database schema and tables..."
     - mysql -h mysql-server -u root -proot_password -e "CREATE DATABASE IF NOT EXISTS your_database_name;"
@@ -23,16 +55,27 @@ setup:
 
 unit-test:
   image: $IMAGE_MAVEN
-  stage: test
-  script:
-    - echo "Running unit tests..."
-    - mvn test -Dspring.profiles.active=test
+  stage: unit-test
   services:
     - name: mysql:8.0
       alias: mysql-server
+  script:
+    - echo "Running database migrations..."
+    - mvn flyway:migrate -Dspring.profiles.active=test  # Example: Use Flyway for DB migrations
+    - echo "Running unit tests..."
+    - mvn test -Dspring.profiles.active=test
   variables:
     MYSQL_DATABASE: "your_database_name"
     MYSQL_ROOT_PASSWORD: "root_password"
+    MYSQL_USER: "your_mysql_user"
+    MYSQL_PASSWORD: "your_mysql_password"
+coverage-test:
+  image: $IMAGE_MAVEN
+  stage: coverage-test
+  needs:
+    - job: unit-test
+  script:
+    - echo "Running coverage tests..."
 
 release:
   stage: release
