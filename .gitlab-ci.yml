@@ -1,8 +1,7 @@
-image: maven:3.8.3
-
 stages:
   - build
   - test
+  - deploy
 
 variables:
   MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
@@ -10,6 +9,10 @@ variables:
 cache:
   paths:
     - .m2/repository
+
+services:
+  - name: mysql:8.0  # Use the MySQL service in the Docker container
+    alias: mysql
 
 build:
   stage: build
@@ -23,3 +26,10 @@ test:
   artifacts:
     paths:
       - custom/path/for/report/  # Path to your custom Jacoco report directory
+
+deploy:
+  stage: deploy
+  image: maven:3.8.3
+  script:
+    - docker run -d -p 3306:3306 --name=mysql_container -e MYSQL_ROOT_PASSWORD=root_password -e MYSQL_DATABASE=GestionUserVersMicro mysql:8.0
+    - docker run --name=myapp_container --link=mysql_container:mysql -p 8093:8093 your-app-image:tag
