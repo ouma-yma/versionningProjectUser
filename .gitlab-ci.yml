@@ -1,67 +1,53 @@
+image: docker:latest
+services:
+  - docker:dind
+  - mysql:8
+
 stages:
-  - clean
   - build
-  - static-code-analysis
-  - unit-test
-  - coverage-test
-  - release
-variables:
-  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
-  IMAGE_MAVEN: maven:3.8.3
+  - test
+  - package
+  - deploy-tb
+  - deploy-prod
 
-clean:
-  image: $IMAGE_MAVEN
-  stage: clean
-  script:
-    - echo "Cleaning leftovers from previous builds"
-    - mvn clean
-
-build:
-  image: $IMAGE_MAVEN
+maven-build:
+  image: maven:3-jdk-8
   stage: build
-  script:
-    - echo "Compiling the code..."
-    - mvn install -B -DskipTests
+  script: "mvn package -B"
   artifacts:
     paths:
-      - target/  # Adjust the artifact path as per Maven's build output
+      - target/*.jar
 
-static-code-analysis:
-  image: $IMAGE_MAVEN
-  stage: static-code-analysis
+docker-build:
+  stage: package
   script:
-    - echo "Running Static Code Analysis..."
-    - echo "Checking duplicated code..."
-    - mvn pmd:cpd-check
-    - echo "Checking code standard..."
-    - mvn pmd:pmd
+    - docker build -t registry.gitlab.com/PROFILE_NAME/user .
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.gitlab.com
+    - docker push registry.gitlab.com/PROFILE_NAME/user
 
-unit-test:
-  image: $IMAGE_MAVEN
-  services:
-  - mysql:8
-  stage: unit-test
+test:
   script:
-    - echo "Running unit tests..."
-    - mvn test 
+    - mvn verify
+  artifacts:
+    when: always
+    reports:
+      junit:
+        - target/surefire-reports/TEST-*.xml
+        - target/failsafe-reports/TEST-*.xml
 
-coverage-test:
-  image: $IMAGE_MAVEN
-  services:
-    - mysql:8
-  stage: coverage-test
-  needs:
-    - job: unit-test
+deploy-tb:
+  image: bitnami/kubectl:latest
+  stage: deploy-tb
+  only:
+    - master
   script:
-    - echo "Running coverage tests..."
-release:
-  stage: release
-  image: registry.gitlab.com/gitlab-org/release-cli:latest  # Adjust the image as needed
-  rules:
-    - if: $CI_COMMIT_BRANCH == "master"  # Release only triggered on the master branch
+    - kubectl apply -f deployment.yaml -n test
+
+deploy-prod:
+  image: bitnami/kubectl:latest
+  stage: deploy-prod
+  only:
+    - master
+  when: manual
   script:
-    - echo "Creating a release..."
-    # Add commands to create the release here
-    # Example commands to create a release:
-    # - git tag -a $CI_COMMIT_SHORT_SHA -m "Release $CI_COMMIT_SHORT_SHA"
-    # - git push origin $CI_COMMIT_SHORT_SHA
+    - kubectl apply -f deployment.yaml -n prod
