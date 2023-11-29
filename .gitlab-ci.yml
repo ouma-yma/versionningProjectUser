@@ -17,7 +17,7 @@ services:
 build:
   stage: build
   script:
-    - mvn clean install -B -DskipTests
+    - mvn install -B -DskipTests
 
 test:
   stage: test
