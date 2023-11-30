@@ -51,7 +51,7 @@ unit-test:
   script:
     - echo "Running database migrations..."
     - echo "Running unit tests..." 
-    - mvn pmd
+    - mvn test -Dspring.profiles.active=test
 coverage-test:
   image: $IMAGE_MAVEN
   stage: coverage-test
@@ -71,4 +71,3 @@ release:
     # Example commands to create a release:
     # - git tag -a $CI_COMMIT_SHORT_SHA -m "Release $CI_COMMIT_SHORT_SHA"
     # - git push origin $CI_COMMIT_SHORT_SHA
-
